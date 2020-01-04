@@ -1,0 +1,229 @@
+---
+title: "R Assignment 1"
+author: "Sharif Nijim"
+date: "9/25/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r env_setup}
+# Clear out the environment
+rm(list = ls())
+# Load relevant libraries, installing them if you haven't already done so
+if (!require(tidyverse))
+{
+  install.packages("tidyverse")
+} 
+
+```
+
+```{r vehicles}
+library(tidyverse)
+
+# Load the data
+vehicles <- read_csv("https://itao-datasets.s3.amazonaws.com/vehicles.csv",
+                     col_types="inincicccici")
+vehicles <- vehicles %>%
+  mutate(class=as.factor(class),
+         drive=as.factor(drive),
+         make=as.factor(make),
+         transmissiontype=as.factor(transmissiontype))
+```
+
+## Problem 1: Guided Visualization
+In this part of the assignment, you will generate five graphs from this dataset meeting the provided requirements. You should be able to build these visualizations without using the dplyr library.
+
+### Part A
+Generate a scatterplot showing the miles per gallon that the vehicle experiences during city driving on the x-axis and the vehicle’s CO2 emissions on the y-axis.
+  
+```{r}
+ggplot(data=vehicles) +
+  geom_point(mapping=aes(x=citympg,
+                         y=co2emissions))
+
+```
+  
+
+### Part B
+Create a second scatterplot showing the same information as the plot from Part A but use color to distinguish vehicles by drive type.
+  
+```{r}
+ggplot(data=vehicles) +
+  geom_point(mapping=aes(x=citympg,
+                         y=co2emissions,
+                         color = drive))
+
+```
+  
+
+### Part C
+Create a stacked bar chart that shows the number of vehicles tested each year broken out by vehicle class.
+  
+```{r}
+ggplot(data=vehicles) +
+  geom_bar(mapping=aes(x=class
+                       ))
+
+```
+  
+
+### Part D
+Create a set of histograms that shows the number of vehicles tested by their mileage per gallon during city driving. You should use one call to ggplot that creates separate histograms for each transmission type.
+  
+Note: We did not discuss histograms in class, so you may wish to consult the documentation for this geometry. Also, it might simplify things to create a single histogram first and then add commands that break it into different histograms for each transmission type.
+  
+```{r}
+ggplot(data=vehicles) +
+  geom_histogram(mapping=aes(x= citympg
+  ))+
+  facet_wrap(~ transmissiontype)
+
+```
+  
+
+## Problem 2 - Working with dplyr
+In this part of the assignment, you will expand your work to use the dplyr grammar of data manipulation.
+  
+For each part below, use a single R statement to perform the task. You may do this by joining together dplyr verbs and the ggplot commands with %>% and +.
+  
+### Part A
+Print a table showing the minimum, maximum, mean, and median city MPG for vehicles tested, broken out by vehicle class. All values should be displayed as integers. Use the as.integer() and round() functions, as necessary.
+  
+```{r}
+vehicles %>%
+  group_by(class) %>%
+  summarise(max(citympg),min(citympg),round(mean(citympg)),round(median(citympg)))
+
+```
+  
+
+### Part B
+Display a line graph showing the change in average city vs. highway MPG over time. Do not round the data to integers this time. Show the city MPG as a red line and the highway MPG as a blue line.
+  
+You do not need to add a legend to this diagram. The structure of the data would make this somewhat complicated. We’ll discuss that more when we get to data wrangling.
+  
+```{r}
+vehicles %>%
+  group_by(year) %>%
+  summarise(meancitympg=mean(citympg),meanhighwaympg=mean(highwaympg)) %>%
+  ggplot() +
+  geom_line(mapping=aes(x=year,y=meancitympg), color = 'red')+
+  geom_line(mapping=aes(x=year,y=meanhighwaympg), color = 'blue')
+
+
+```
+  
+
+### Part C
+Modify the graph above to also show the overall MPG, computed as the average of city and highway MPG. Plot this as a green line.
+  
+```{r}
+vehicles %>%
+  group_by(year) %>%
+  summarise(meancitympg=mean(citympg),meanhighwaympg=mean(highwaympg)) %>%
+  mutate(OVERALLMPG=meancitympg+meanhighwaympg)%>%
+  ggplot() +
+  geom_line(mapping=aes(x=year,y=meancitympg), color = 'red')+
+  geom_line(mapping=aes(x=year,y=meanhighwaympg), color = 'blue')+
+  geom_line(mapping=aes(x=year,y=OVERALLMPG), color = 'green')  
+
+```
+  
+
+### Part D
+Modify the graph above to show separate graphs for each drive type.
+  
+```{r}
+vehicles %>%
+  group_by(year,drive) %>%
+  summarise(meancitympg=mean(citympg),meanhighwaympg=mean(highwaympg)) %>%
+  mutate(OVERALLMPG=meancitympg+meanhighwaympg)%>%
+  ggplot() +
+  geom_line(mapping=aes(x=year,y=meancitympg), color = 'red')+
+  geom_line(mapping=aes(x=year,y=meanhighwaympg), color = 'blue')+
+  geom_line(mapping=aes(x=year,y=OVERALLMPG), color = 'green')+
+  facet_wrap(~ drive)
+
+
+```
+  
+
+## Problem 3 - Data Exploration and Visualization
+Use the strategies you learned in class as well as your own independent research to explore the vehicle testing and college datasets in more detail.
+  
+Create two interesting visualizations based upon your exploration. Take the time to beautify them. Your grade for this portion of the assignment will be based upon your technical ability to create the visualizations, their analytical uniqueness, and their appearance.
+  
+Feel free to use the techniques that we explored in class and/or to explore other features of ggplot2.
+  
+For each of your visualizations, provide a brief description of the insight that they provide. You should answer the question (with just a sentence or two), “What do we learn from this visualization?” You can provide your answer as comments in your code or, if you would like to explore a new technology, try using RMarkdown.
+  
+You may choose to use data from the vehicle dataset, the college dataset, or both.
+  
+```{r interesting1}
+
+ggplot(data=vehicles) +
+  geom_point(mapping = aes(x=year, 
+                           y=co2emissions, color = transmissiontype)) +
+  geom_smooth(mapping = aes(x=year, 
+                           y=co2emissions,color=transmissiontype))+
+  ggtitle("Average Amount of CO2 released per year",
+          subtitle="Source:  Environmental Protection Agency's National Vehicle and Fuel Emissions Laboratory in Ann Arbor, Michigan") +
+  theme(panel.grid = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank()) +
+  ylab("CO2 Emissions (Grams Per Mile)")+
+  xlab("Year")
+
+
+
+```
+
+INSIGHTS:
+Average amount of Co2emissions in Manual cars is lower than the average in Automatic cars.
+The average of co2emissions in two type remains stable from 1985 to 2005. Then, both of them decreases slightly after 2005
+  
+
+  
+```{r interesting2}
+ggplot(vehicles) +
+  geom_boxplot(mapping = aes(x=drive,
+                             y =highwaympg))+
+    ggtitle("Highway Speed Divided by Drive Axle Type",
+          subtitle = 'Source: vehicle manufacturers with oversight by EPA')+
+  ylab("Highway Speed (Miles per gallon)")+
+  xlab("Drive Axle Type") 
+
+
+```
+
+
+INSIGHTS:
+Front-Wheel Drive has the fastest highway speed.
+2-Wheel Drive has the slowest speed.
+
+
+
+
+
+
+
+
+
+
+
+What You Should Turn In
+You should upload two files to Sakai:  
+● Your Rmd script (lastname_1.Rmd)  
+● A knitted PDF of your Rmd.  
+
+The R script (and report) should contain your solutions to all problem parts in one script.  
+
+Place comments at the beginning of the script that include your full name and the purpose of the code. Use comments to separate the sections from each other.
